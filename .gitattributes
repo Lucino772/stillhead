@@ -1,0 +1,22 @@
+# One line ending everywhere: LF in the repository AND in every working tree,
+# on Windows and Linux alike. Matches Prettier's endOfLine: lf and Ruff's
+# default, so a file formatted on either OS is byte-identical.
+* text=auto eol=lf
+
+# Lockfiles: resolver output, never hand-edited.
+uv.lock linguist-generated=true
+
+# Binary assets. None are tracked yet.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.db binary
