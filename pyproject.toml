@@ -1,0 +1,124 @@
+[project]
+name = "stillhead"
+version = "0.1.0"
+description = "Per-module database migrations on Alembic: each module owns its namespace, its version table and its revision lineage."
+readme = "README.md"
+authors = [{ name = "Lucino772" }]
+requires-python = ">=3.10"
+dependencies = ["alembic>=1.13"]
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["ruff>=0.15.13", "pyright[nodejs]>=1.1.409"]
+
+# NOTE: See configuration here, https://microsoft.github.io/pyright/#/configuration
+[tool.pyright]
+include = ["src"]
+exclude = ["**/.*", ".venv", "**/__pycache__", "**/dist", "**/build", "docs"]
+
+# Resolve project dependencies from the repository's local virtual environment.
+venvPath = "."
+venv = ".venv"
+
+# Typecheck against the floor we advertise, not the newest interpreter
+# installed, so syntax and stdlib newer than 3.10 fails here rather than in a
+# user's install.
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+
+# Deterministic, blocking checks for unused declarations that Pyright can prove
+# from a single file's scope. Promoted from "warning" to "error" so CI fails on
+# regressions.
+# NOTE: reportUnusedFunction is intentionally NOT enabled (~80% false positives
+# from module-scoped functions used via dynamic dispatch); reportUnusedImport is
+# deferred until the import-cleanup pass lands.
+reportUnusedVariable = "error"
+reportUnusedClass = "error"
+reportUnusedExpression = "error"
+reportUnusedCoroutine = "error"
+
+
+# ---------------------------------------------------------------------------
+# Lint / type configuration.
+# ---------------------------------------------------------------------------
+# NOTE: For line length, PEP 8 recommends 79 for code, and 72 for comments and docs, for
+#       everything in the standard library. In general, 90-ish seems like the wise choice.
+#       See here, https://peps.python.org/pep-0008/#maximum-line-length.
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py310"
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 80
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 80
+
+# NOTE: See all the rules here: https://docs.astral.sh/ruff/rules/
+#       We prefer `extend-select` and `extend-ignore` over replacing Ruff's
+#       defaults outright. Ruff already ships with sensible defaults, and this
+#       lets us keep that baseline while only adding or relaxing the few rules
+#       that are intentional for this repository.
+#       Future additions worth considering:
+#       `B` (bugbear) for extra bug-catching checks, `UP` (pyupgrade) for
+#       modern Python syntax, and `T20` (print) only with per-file ignores for
+#       scripts/tests where `print()` is an intentional part of the workflow.
+[tool.ruff.lint]
+extend-select = [
+    "I",      # isort: sort and group imports consistently
+    "RUF022", # __all__ entries should be sorted
+    "RUF023", # __slots__ entries should be sorted
+    "W291",   # Trailing whitespace
+    "W292",   # No newline at end of file
+    "W293",   # Blank line contains whitespace
+    "W505",   # Doc line too long
+    "W605",   # Invalid escape sequence
+    "TC",     # flake8-type-checking: move type-only imports behind TYPE_CHECKING
+    "FA",     # flake8-future-annotations: encourage modern annotation handling
+    "C4",     # flake8-comprehensions: prefer simpler/more direct comprehensions
+    "PYI",    # flake8-pyi: catch stub-style typing issues
+    "COM818", # Trailing comma on bare tuple is prohibited
+]
+extend-ignore = [
+    "D203", # One blank line required before class docstring
+    "D213", # Multi-line docstring summary should start at second line
+    "W505", # Doc line too long
+    # Avoid enabling the ignores below by default.
+    # Most of them suppress correctness or maintainability checks that often
+    # catch real bugs early, especially during refactors and pre-commit runs.
+    # "E501",  # Line too long; no point ignoring it if we want line-length enforced
+    # "E402",  # Module level import not at top of file
+    # "E722",  # Do not use bare except
+    # "E741",  # Ambiguous variable name
+    # "F811",  # Redefinition of unused name
+    # "F821",  # Undefined name
+    # "F823",  # Local variable referenced before assignment
+    # "F841",  # Local variable assigned but never used
+]
+
+# NOTE: Keep per-file ignores narrow and intentional.
+
+# Alembic revision files are produced by a generator (never hand-authored).
+# Their import layout follows the Alembic template and must not be reshaped by
+# import-sorting / type-checking-import lints, which would otherwise fight the
+# generator on every new revision. This matters more here than downstream:
+# generating these files is what this package does.
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/versions/*.py" = ["I001", "TC001", "TC002", "TC003"]
+"**/scripts/*" = [
+    "INP001", # File is part of an implicit namespace package
+    "T201",   # `print()` found
+    "W505",   # Doc line too long
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+known-first-party = ["stillhead"]

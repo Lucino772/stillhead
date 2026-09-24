@@ -1,0 +1,62 @@
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+[tools]
+python = "3.10.21"
+uv = "0.12.18"
+
+[settings]
+python.uv_venv_auto = true
+
+# ---------------------------------------------------------------------------
+# Dependency management
+# ---------------------------------------------------------------------------
+[tasks."deps:sync"]
+description = "Install dependencies from the existing lockfile without updating it (CI-style frozen install)."
+run = "uv sync --frozen --all-extras --all-groups"
+
+[tasks."deps:update"]
+description = "Refresh the lockfile. Use after editing pyproject.toml."
+run = "uv sync --all-extras --all-groups"
+
+
+# ---------- Lint / format: check only (non-mutating) ----------
+[tasks."lint:check:ruff:check"]
+description = "Lint Python (ruff check)."
+run = "uv run ruff check ."
+
+[tasks."lint:check:ruff:format"]
+description = "Check Python formatting (ruff format --check)."
+run = "uv run ruff format --check ."
+
+# ---------- Lint / format: auto-fix (mutating) ----------
+[tasks."lint:fix:ruff:check"]
+description = "Auto-fix Python lint issues (ruff check --fix)."
+run = "uv run ruff check --fix ."
+
+[tasks."lint:fix:ruff:format"]
+description = "Format Python (ruff format)."
+run = "uv run ruff format ."
+
+# ---------- Typechecking ----------
+[tasks."lint:typecheck"]
+description = "Typecheck Python (pyright)."
+# Pyright is a Node tool. This toolchain deliberately pins no Node, so tell
+# pyright-python to ignore whatever `node` is on PATH and use the interpreter
+# vendored by the `pyright[nodejs]` extra instead. Without this, mise's own
+# node shim is found first and fails with "No version is set for shim: node".
+env = { PYRIGHT_PYTHON_GLOBAL_NODE = "false" }
+run = "uv run pyright"
+
+# ---------- Umbrellas ----------
+[tasks."lint:check"]
+description = "Run all check-only lint/format tasks."
+depends = ["lint:check:ruff:check", "lint:check:ruff:format"]
+
+[tasks."lint:fix"]
+description = "Auto-fix everything, in order (ruff check --fix, then ruff format)."
+run = ["mise run lint:fix:ruff:check", "mise run lint:fix:ruff:format"]
+
+[tasks."lint"]
+description = "Full gate: all checks + typechecks (what CI runs)."
+depends = ["lint:check", "lint:typecheck"]
