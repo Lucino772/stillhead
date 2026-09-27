@@ -8,55 +8,66 @@ uv = "0.12.18"
 [settings]
 python.uv_venv_auto = true
 
-# ---------------------------------------------------------------------------
-# Dependency management
-# ---------------------------------------------------------------------------
+# --- Dependencies ------------------------------------------------------------
+
 [tasks."deps:sync"]
-description = "Install dependencies from the existing lockfile without updating it (CI-style frozen install)."
+description = "Install the dependencies from the lockfile, without changing it."
 run = "uv sync --frozen --all-extras --all-groups"
 
 [tasks."deps:update"]
-description = "Refresh the lockfile. Use after editing pyproject.toml."
+description = "Update the lockfile and install. Run it after you change pyproject.toml."
 run = "uv sync --all-extras --all-groups"
 
+# --- Lint --------------------------------------------------------------------
 
-# ---------- Lint / format: check only (non-mutating) ----------
 [tasks."lint:check:ruff:check"]
-description = "Lint Python (ruff check)."
+description = "Check the code with ruff."
 run = "uv run ruff check ."
 
 [tasks."lint:check:ruff:format"]
-description = "Check Python formatting (ruff format --check)."
+description = "Check the formatting with ruff. Changes nothing."
 run = "uv run ruff format --check ."
 
-# ---------- Lint / format: auto-fix (mutating) ----------
 [tasks."lint:fix:ruff:check"]
-description = "Auto-fix Python lint issues (ruff check --fix)."
+description = "Fix the problems that ruff can fix."
 run = "uv run ruff check --fix ."
 
 [tasks."lint:fix:ruff:format"]
-description = "Format Python (ruff format)."
+description = "Format the code with ruff."
 run = "uv run ruff format ."
 
-# ---------- Typechecking ----------
 [tasks."lint:typecheck"]
-description = "Typecheck Python (pyright)."
-# Pyright is a Node tool. This toolchain deliberately pins no Node, so tell
-# pyright-python to ignore whatever `node` is on PATH and use the interpreter
-# vendored by the `pyright[nodejs]` extra instead. Without this, mise's own
-# node shim is found first and fails with "No version is set for shim: node".
+description = "Check the types with pyright."
+# Use the Node that the pyright[nodejs] package installs. Without this, pyright
+# finds the Node shim of mise, which has no version set, and fails.
 env = { PYRIGHT_PYTHON_GLOBAL_NODE = "false" }
 run = "uv run pyright"
 
-# ---------- Umbrellas ----------
 [tasks."lint:check"]
-description = "Run all check-only lint/format tasks."
+description = "Run all ruff checks. Changes nothing."
 depends = ["lint:check:ruff:check", "lint:check:ruff:format"]
 
 [tasks."lint:fix"]
-description = "Auto-fix everything, in order (ruff check --fix, then ruff format)."
+description = "Fix and format the code with ruff."
 run = ["mise run lint:fix:ruff:check", "mise run lint:fix:ruff:format"]
 
 [tasks."lint"]
-description = "Full gate: all checks + typechecks (what CI runs)."
+description = "Run all ruff checks and the type check."
 depends = ["lint:check", "lint:typecheck"]
+
+# --- Tests -------------------------------------------------------------------
+# The Postgres tests need Docker. The bundle tests need PyInstaller. Each is
+# skipped when it is missing.
+
+[tasks."test:unit"]
+description = "Run the tests that open no database engine."
+# Serial: this is faster than starting the workers of -n.
+run = "uv run pytest -m 'not integration'"
+
+[tasks."test:integration"]
+description = "Run the tests that open a database engine or build a bundle."
+run = "uv run pytest -m integration -n auto"
+
+[tasks."test"]
+description = "Run all the tests."
+run = "uv run pytest -n auto"
