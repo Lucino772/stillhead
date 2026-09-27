@@ -71,3 +71,9 @@ run = "uv run pytest -m integration -n auto"
 [tasks."test"]
 description = "Run all the tests."
 run = "uv run pytest -n auto"
+
+# --- Build -------------------------------------------------------------------
+
+[tasks."build"]
+description = "Build the sdist and the wheel into dist/."
+run = "uv build"
