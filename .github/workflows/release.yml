@@ -38,13 +38,14 @@ jobs:
       # Trusted publishing: PyPI accepts the OIDC token of this workflow.
       id-token: write
     steps:
+      # mise.toml is needed for the uv version. Check out first: the checkout
+      # cleans the directory, and would delete dist/.
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
       - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
-      # mise.toml is needed for the uv version.
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
       - run: uv publish --trusted-publishing always dist/*
 
   github-release:
